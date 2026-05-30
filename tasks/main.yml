@@ -1,0 +1,37 @@
+---
+- name: 'pve_post_install | Skip if pve_post_install_enabled=false'
+  ansible.builtin.meta: end_play
+  when: not (pve_post_install_enabled | bool)
+
+- name: 'pve_post_install | Assert Debian'
+  ansible.builtin.assert:
+    that:
+      - "ansible_facts['os_family'] == 'Debian'"
+    fail_msg: "pve_post_install supports Debian-family only (got {{ ansible_facts['os_family'] }})"
+
+- name: 'pve_post_install | Detect Proxmox profile (PVE / PBS / PMG)'
+  ansible.builtin.shell:
+    cmd: |
+      if command -v pveversion >/dev/null 2>&1; then echo pve;
+      elif command -v proxmox-backup-manager >/dev/null 2>&1; then echo pbs;
+      elif command -v pmgversion >/dev/null 2>&1; then echo pmg;
+      else echo unknown; fi
+  register: pvepi_profile_raw
+  changed_when: false
+  check_mode: false
+
+- name: 'pve_post_install | Set fact pve_post_install_profile'
+  ansible.builtin.set_fact:
+    pve_post_install_profile: "{{ pvepi_profile_raw.stdout | trim }}"
+
+- name: 'pve_post_install | Assert detected Proxmox profile (one of pve/pbs/pmg)'
+  ansible.builtin.assert:
+    that:
+      - "pve_post_install_profile in ['pve', 'pbs', 'pmg']"
+    fail_msg: "Host {{ inventory_hostname }} is not PVE/PBS/PMG (profile={{ pve_post_install_profile }})"
+
+- name: 'pve_post_install | Install pve-fake-subscription'
+  ansible.builtin.include_tasks:
+    file: 'fake_sub.yml'
+  when:
+    - "pve_post_install_install_fake_subscription | bool"

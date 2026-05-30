@@ -1,0 +1,48 @@
+---
+# Установка/обновление Jamesits/pve-fake-subscription.
+# Идемпотентно: dpkg-query версия проверяется перед copy/install.
+# Deb хранится в файлах роли (`files/`) — не требует internet на ноде,
+# работает в --check, версия пинится файлом в repo.
+
+- name: 'pve_post_install | Check current pve-fake-subscription version'
+  ansible.builtin.command:
+    cmd: "dpkg-query -W -f=${Version} pve-fake-subscription"
+  register: pvepi_fs_current
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: 'pve_post_install | Set fact: target version + need install'
+  ansible.builtin.set_fact:
+    pve_post_install_fs_target: >-
+      {{ pve_fake_subscription_version }}{{ pve_fake_subscription_pkg_suffix }}
+    pve_post_install_fs_need_install: >-
+      {{ pvepi_fs_current.rc != 0
+         or pvepi_fs_current.stdout | trim
+            != pve_fake_subscription_version + pve_fake_subscription_pkg_suffix }}
+
+- name: 'pve_post_install | Copy deb from role files/ to /var/cache/'
+  ansible.builtin.copy:
+    src: "pve-fake-subscription_{{ pve_post_install_fs_target }}_all.deb"
+    dest: "{{ pve_fake_subscription_cache }}"
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  when: pve_post_install_fs_need_install | bool
+
+- name: 'pve_post_install | Install via apt deb='
+  ansible.builtin.apt:
+    deb: "{{ pve_fake_subscription_cache }}"
+  when: pve_post_install_fs_need_install | bool
+  # В --check `copy` не пишет deb на ноду → apt не найдёт файл и упадёт.
+  # Это check-mode artifact, не реальная проблема. На apply без --check
+  # последовательность copy → apt deb= идеомпотентна.
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: 'pve_post_install | Verify service active'
+  ansible.builtin.systemd:
+    name: 'pve-fake-subscription'
+    state: 'started'
+    enabled: 'true'
+  when: pve_post_install_fs_need_install | bool
+  ignore_errors: "{{ ansible_check_mode }}"

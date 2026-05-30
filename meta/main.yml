@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  author: 'napaster'
+  description: >-
+    Канонический post-install для Proxmox VE / PBS / PMG: установка
+    pve-fake-subscription (Jamesits) v1. Repos/nag-patch — в будущих версиях.
+  license: 'MIT'
+  min_ansible_version: '2.15'
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+  galaxy_tags:
+    - proxmox
+    - pve
+    - pbs
+    - pmg
+    - post-install
+
+dependencies: []

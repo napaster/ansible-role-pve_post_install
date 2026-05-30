@@ -1,0 +1,29 @@
+---
+# Роль pve_post_install — канонический пост-инсталл Proxmox VE/PBS/PMG.
+# v1: только установка pve-fake-subscription (Jamesits). Repos/nag-патч —
+# в будущих версиях.
+#
+# Opt-in: pve_post_install_enabled должно быть явно true в host_vars или
+# group_vars (по умолчанию роль no-op).
+
+# Включить роль на хосте. Default false — opt-in.
+pve_post_install_enabled: false
+
+# ── Jamesits/pve-fake-subscription ──────────────────────────────────────────
+# Управляет local fake subscription endpoint, убирает "No valid subscription"
+# на PVE/PBS/PMG. Не патчит системные файлы, переживает proxmox-widget-toolkit
+# обновления. ⚠ Не жать "Check" на Subscription page — инвалидирует кэш.
+
+# Установить/обновить fake-subscription пакет
+pve_post_install_install_fake_subscription: true
+
+# Версия пакета (release tag без 'v') + build suffix (release-specific).
+# Сам .deb лежит в `roles/pve_post_install/files/` — при смене версии
+# скачать новый deb туда и обновить имя/suffix.
+pve_fake_subscription_version: '0.0.11'
+pve_fake_subscription_pkg_suffix: '+git-1'
+
+# Локальный путь под кэш на ноде
+pve_fake_subscription_cache: >-
+  /var/cache/apt/archives/pve-fake-subscription_{{
+  pve_fake_subscription_version }}{{ pve_fake_subscription_pkg_suffix }}_all.deb

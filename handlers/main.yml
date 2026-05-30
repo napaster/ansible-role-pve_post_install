@@ -1,0 +1,4 @@
+---
+# Handlers пока не нужны — apt deb= вызовет dpkg postinst hook, который
+# сам стартует/перезапустит pve-fake-subscription.service. На случай если
+# понадобится явно — оставлено место под reload/restart.

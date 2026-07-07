@@ -4,12 +4,16 @@ Ansible-роль для канонического post-install Proxmox VE / PBS
 
 ## v1 — что делает
 
-Только **установка `pve-fake-subscription`** (Jamesits) для убирания
-«No valid subscription» nag-окна. Не патчит системные файлы, переживает
-обновления `proxmox-widget-toolkit`.
+1. **Установка `pve-fake-subscription`** (Jamesits) для убирания
+   «No valid subscription» nag-окна. Не патчит системные файлы, переживает
+   обновления `proxmox-widget-toolkit`.
+2. **Disable enterprise APT repo** — append `Enabled: false` в
+   `pve-enterprise.sources` / `pbs-enterprise.sources` / `pmg-enterprise.sources`
+   (deb822 формат PVE 8+/PBS 3+/PMG 8+). Fake-subscription НЕ решает `401
+   Unauthorized` при `apt update` — это отдельная граблина.
 
-Repos (no-subscription / disable enterprise) — **в будущих версиях** роли,
-сейчас выкл, чтобы случайно не сломать APT.
+No-subscription repo прописывается PVE-installer'ом сам (`pve-install-repo.sources`)
+— роль его не трогает.
 
 ## Opt-in
 
@@ -26,6 +30,7 @@ pve_post_install_enabled: true
 |---|---|---|
 | `pve_post_install_enabled` | `false` | Главный switch — без него роль скипает всё. |
 | `pve_post_install_install_fake_subscription` | `true` | Ставить pve-fake-subscription. |
+| `pve_post_install_disable_enterprise_repo` | `true` | Append `Enabled: false` в enterprise `.sources`. |
 | `pve_fake_subscription_version` | `'0.0.11'` | Версия пакета (без 'v'). |
 | `pve_fake_subscription_url` | вычисляется из version | URL deb-файла на GitHub release. |
 | `pve_fake_subscription_cache` | `/var/cache/apt/archives/…` | Путь под скачанный deb. |

@@ -35,3 +35,9 @@
     file: 'fake_sub.yml'
   when:
     - "pve_post_install_install_fake_subscription | bool"
+
+- name: 'pve_post_install | Disable enterprise APT repo'
+  ansible.builtin.include_tasks:
+    file: 'disable_enterprise.yml'
+  when:
+    - "pve_post_install_disable_enterprise_repo | bool"

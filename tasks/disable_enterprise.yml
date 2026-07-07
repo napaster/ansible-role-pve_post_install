@@ -1,0 +1,31 @@
+---
+# Disable Proxmox enterprise APT repositories (require paid subscription).
+#
+# PVE 8+/PBS 3+/PMG 8+ use deb822 `.sources` format в `/etc/apt/sources.list.d/`.
+# Проходимся по всем трём (по одному на profile), append `Enabled: false`
+# в конец файла. Legacy `.list` формат (PVE 7.x, Debian bullseye) не поддерживаем
+# — эти хосты EOL.
+
+- name: 'pve_post_install | Find enterprise sources.list.d files (deb822)'
+  ansible.builtin.find:
+    paths: '/etc/apt/sources.list.d'
+    patterns:
+      - 'pve-enterprise.sources'
+      - 'pbs-enterprise.sources'
+      - 'pmg-enterprise.sources'
+    file_type: 'file'
+  register: 'pvepi_enterprise_sources'
+
+- name: 'pve_post_install | Append "Enabled: false" в enterprise .sources'
+  ansible.builtin.lineinfile:
+    path: '{{ item.path }}'
+    regexp: '^Enabled:'
+    line: 'Enabled: false'
+    state: 'present'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  loop: '{{ pvepi_enterprise_sources.files }}'
+  loop_control:
+    label: '{{ item.path | basename }}'
+  when: 'pvepi_enterprise_sources.files | length > 0'

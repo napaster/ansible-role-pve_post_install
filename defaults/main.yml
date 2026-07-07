@@ -1,7 +1,7 @@
 ---
 # Роль pve_post_install — канонический пост-инсталл Proxmox VE/PBS/PMG.
-# v1: только установка pve-fake-subscription (Jamesits). Repos/nag-патч —
-# в будущих версиях.
+# v1: pve-fake-subscription (Jamesits) + disable enterprise APT repo.
+# Nag-patch и другие тюнинги — в будущих версиях.
 #
 # Opt-in: pve_post_install_enabled должно быть явно true в host_vars или
 # group_vars (по умолчанию роль no-op).
@@ -27,3 +27,16 @@ pve_fake_subscription_pkg_suffix: '+git-1'
 pve_fake_subscription_cache: >-
   /var/cache/apt/archives/pve-fake-subscription_{{
   pve_fake_subscription_version }}{{ pve_fake_subscription_pkg_suffix }}_all.deb
+
+# ── Disable enterprise APT repo ────────────────────────────────────────────
+# Enterprise `.sources` (PVE 8+/PBS 3+/PMG 8+ deb822 формат) требует subscription
+# key — без него `apt update` даёт `401 Unauthorized` от enterprise.proxmox.com.
+# Fake-subscription НЕ решает эту проблему (только dashboard warning),
+# нужно отдельно дизейбить apt-source через `Enabled: false`.
+#
+# Роль пробегает по:
+#   /etc/apt/sources.list.d/pve-enterprise.sources
+#   /etc/apt/sources.list.d/pbs-enterprise.sources
+#   /etc/apt/sources.list.d/pmg-enterprise.sources
+# и append'ит `Enabled: false` в найденные (несуществующие пропускаются).
+pve_post_install_disable_enterprise_repo: true
